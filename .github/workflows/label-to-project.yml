@@ -1,0 +1,62 @@
+name: Add Issue to Project
+
+on:
+  issues:
+    types: [labeled, unlabeled]
+
+jobs:
+  check_issue_label:
+    name: Check label on issue
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check if label maps to project
+        run: |
+          # Project should be the graphql node id
+          # Goto https://docs.github.com/graphql/overview/explorer and run
+          # "{ organization(login: "Azure") { projectNext(number: <PROJECT_NUMBER>) { id } } }" 
+          # replacing <PROJECT_NUMBER> with your project to get project node id.
+          $labelToProject = @{
+            "Central-EngSys"   = "PN_kwDOAGhwUs4ABj5U"  # https://github.com/orgs/Azure/projects/162
+          }
+          $label = '${{ github.event.label.name }}'
+          
+          $projectId = $labelToProject[$label]
+          if (!$projectId) {
+            Write-Host "Label '$label' does not map to a project so skipping"
+            exit 0
+          }
+          $issueId = "${{ github.event.issue.node_id }}"
+          
+          Write-Verbose $(gh api -H "Accept: application/vnd.github.v3+json" /rate_limit --jq '.resources')
+          # Always add the item to the project even in the delete case because we need to get the project item id
+          # and adding a item that is already a project item is does nothing but return the existing project item id
+          $projectItemId = gh api graphql -F projectId=$projectId -F issueId=$issueId -f query='
+              mutation($projectId: ID!, $issueId: ID!) {
+                addProjectNextItem(input: {projectId: $projectId, contentId: $issueId}) {
+                  projectNextItem {
+                    id
+                  }
+                }
+              }' --jq ".data.addProjectNextItem.projectNextItem.id"
+          if ("${{ github.event.action }}" -eq "labeled") {
+            Write-Host "Adding issue '${{ github.event.issue.number }}' to project '$projectId' because label '$label' was applied to it."
+          }
+          elseif ("${{ github.event.action }}" -eq "unlabeled") {
+            Write-Host "Removing issue '${{ github.event.issue.number }}' from project '$projectId' because label '$label' was removed from it."
+            $projectDeletedItemId = gh api graphql -F projectId=$projectId -F itemId=$projectItemId -f query='
+              mutation($projectId: ID!, $itemId: ID!)  {
+               deleteProjectNextItem(input: {projectId: $projectId, itemId: $itemId} ) {
+                  deletedItemId
+                }
+            }' --jq ".data.deleteProjectNextItem.deletedItemId"
+            
+            if ($projectItemId -ne $projectDeletedItemId) {
+              Write-Host "Failed to delete '$projectItemId' -ne '$projectDeletedItemId'."
+              exit 1
+            }
+          }
+          Write-Verbose (gh api -H "Accept: application/vnd.github.v3+json" /rate_limit --jq '.resources')
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.LABELER_PAT }}
