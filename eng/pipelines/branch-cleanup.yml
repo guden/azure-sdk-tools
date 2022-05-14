@@ -39,7 +39,7 @@ jobs:
               -BranchPrefix "sync-eng/common-" 
               -AuthToken $(azuresdk-github-pat)
               -CentralRepoId "Azure/azure-sdk-tools"
-              -CentralPRRegex "^.*[^-]*-(?<PrNumber>.*)$"
+              -CentralPRRegex "^.*[^-]*-(?<PrNumber>\d+).*$"
       # - ${{ each repo in parameters.DailyBranchRepos }}:
       #   - task: PowerShell@2
       #     displayName: Clean Up Docs Daily Branches
