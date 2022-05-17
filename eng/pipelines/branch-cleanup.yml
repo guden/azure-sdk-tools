@@ -66,17 +66,17 @@ jobs:
               -CentralRepoId "Azure/azure-rest-api-specs-pr"
               -CentralPRRegex "^sdkAuto/(?<PrNumber>\d+)/.*$"
               -AuthToken $(azuresdk-github-pat)
-      # - ${{ each repo in parameters.DailyBranchRepos }}:
-      #   - task: PowerShell@2
-      #     displayName: Clean Up Docs Daily Branches
-      #     condition: succeededOrFailed()
-      #     inputs:
-      #       pwsh: true
-      #       workingDirectory: $(System.DefaultWorkingDirectory)
-      #       filePath: $(System.DefaultWorkingDirectory)/eng/common/scripts/Delete-RemoteBranches.ps1
-      #       arguments: >
-      #         -RepoId ${{ repo }}
-      #         -BranchPrefix "daily"
-      #         -LastCommitOlderThan ((Get-Date).AddDays(-7))
-      #         -AuthToken $(azuresdk-github-pat)
+      - ${{ each repo in parameters.DailyBranchRepos }}:
+        - task: PowerShell@2
+          displayName: Clean Up Docs Daily Branches
+          condition: succeededOrFailed()
+          inputs:
+            pwsh: true
+            workingDirectory: $(System.DefaultWorkingDirectory)
+            filePath: $(System.DefaultWorkingDirectory)/eng/common/scripts/Delete-RemoteBranches.ps1
+            arguments: >
+              -RepoId ${{ repo }}
+              -BranchPrefix "daily"
+              -LastCommitOlderThan ((Get-Date).AddDays(-7))
+              -AuthToken $(azuresdk-github-pat)
             
