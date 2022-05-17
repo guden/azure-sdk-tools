@@ -64,7 +64,7 @@ jobs:
               -RepoId ${{ repo }}
               -BranchPrefix "sdkAuto" 
               -CentralRepoId "Azure/azure-rest-api-specs-pr"
-              -CentralPRRegex "^sdkAuto/(?<PrNumber>19094)/.*$"
+              -CentralPRRegex "^sdkAuto/(?<PrNumber>\d+)/.*$"
               -AuthToken $(azuresdk-github-pat)
       # - ${{ each repo in parameters.DailyBranchRepos }}:
       #   - task: PowerShell@2
