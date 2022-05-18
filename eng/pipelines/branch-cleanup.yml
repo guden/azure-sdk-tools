@@ -76,5 +76,4 @@ jobs:
       #         -RepoId ${{ repo }}
       #         -CentralPRRegex "daily"
       #         -LastCommitOlderThan ((Get-Date).AddDays(-7))
-      #         -AuthToken $(azuresdk-github-pat)
-            
+      #         -AuthToken $(azuresdk-github-pat)  
