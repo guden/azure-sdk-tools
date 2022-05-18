@@ -65,7 +65,7 @@ function RetrievePRAndClose($pullRequestNumber)
 LogDebug "Operating on Repo [ $RepoId ]"
 
 try{
-  $responses = Get-GitHubSourceReferences -RepoId $RepoId -Ref "heads/$BranchPrefix" -AuthToken $AuthToken
+  $responses = Get-GitHubSourceReferences -RepoId $RepoId -Ref "heads/$CentralPRRegex" -AuthToken $AuthToken
 }
 catch {
   LogError "Get-GitHubSourceReferences failed with exception:`n$_"
@@ -75,7 +75,7 @@ catch {
 foreach ($res in $responses)
 {
   if (!$res -or !$res.ref) {
-    LogDebug "No branch returned from the branch prefix $BranchPrefix on $Repo. Skipping..."
+    LogDebug "No branch returned from the branch prefix $CentralPRRegex on $Repo. Skipping..."
     continue
   }
   $branch = $res.ref
