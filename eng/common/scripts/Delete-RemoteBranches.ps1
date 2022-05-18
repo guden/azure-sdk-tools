@@ -26,7 +26,7 @@ function RetrievePRAndClose($pullRequestNumber)
   }
   try {
     $centralPR = Get-GitHubPullRequest -RepoId $CentralRepoId -PullRequestNumber $pullRequestNumber -AuthToken $AuthToken
-    if ($centralPR.state -eq "closed") {
+    if ($centralPR.state -ne "closed") {
       return
     }
   }
