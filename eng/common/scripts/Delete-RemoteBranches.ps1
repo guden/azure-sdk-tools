@@ -39,7 +39,7 @@ function RetrievePRAndClose {
   catch 
   {
     LogError "Get-GitHubPullRequests failed with exception:`n$_"
-    exit 1
+    return $false
   }
   
   try {
