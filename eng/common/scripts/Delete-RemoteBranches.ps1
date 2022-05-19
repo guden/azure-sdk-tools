@@ -1,3 +1,4 @@
+[CmdletBinding(SupportsShouldProcess)]
 param(
   # The repo owner: e.g. Azure
   $RepoOwner,
@@ -10,11 +11,14 @@ param(
   # We start from the sync PRs, use the branch name to get the PR number of central repo. E.g. sync-eng/common-(<branchName>)-(<PrNumber>). Have group name on PR number.
   [Parameter(Mandatory = $true)]
   $CentralPRRegex,
+  [Parameter(Mandatory = $true)]
+  $BranchPrefix,
   # Date format: e.g. Tuesday, April 12, 2022 1:36:02 PM. Allow to use other date format.
   [AllowNull()]
   [DateTime]$LastCommitOlderThan,
   [Parameter(Mandatory = $true)]
-  $AuthToken
+  $AuthToken,
+  [switch] $TurnOffWhatIf
 )
 
 . (Join-Path $PSScriptRoot common.ps1)
@@ -22,12 +26,12 @@ param(
 function RetrievePRAndClose($pullRequestNumber)
 {
   if (!$pullRequestNumber) {
-    return
+    return $false
   }
   try {
     $centralPR = Get-GitHubPullRequest -RepoId $CentralRepoId -PullRequestNumber $pullRequestNumber -AuthToken $AuthToken
     if ($centralPR.state -ne "closed") {
-      return
+      return $true
     }
   }
   catch 
@@ -60,12 +64,13 @@ function RetrievePRAndClose($pullRequestNumber)
       exit 1
     }
   }
+  return $false
 }
 
 LogDebug "Operating on Repo [ $RepoId ]"
 
 try{
-  $responses = Get-GitHubSourceReferences -RepoId $RepoId -Ref "heads/$CentralPRRegex" -AuthToken $AuthToken
+  $responses = Get-GitHubSourceReferences -RepoId $RepoId -Ref "heads/$BranchPrefix" -AuthToken $AuthToken
 }
 catch {
   LogError "Get-GitHubSourceReferences failed with exception:`n$_"
@@ -103,14 +108,17 @@ foreach ($res in $responses)
       exit 1
     }
   } 
-
+  $hasCentralPROpened = $false
   if ($branchName -match $CentralPRRegex) {
-    RetrievePRAndClose -pullRequestNumber $Matches["PrNumber"] 
+    $hasCentralPROpened = RetrievePRAndClose -pullRequestNumber $Matches["PrNumber"] 
   }
   
   try {
-    Remove-GitHubSourceReferences -RepoId $RepoId -Ref $branch -AuthToken $AuthToken
-    LogDebug "The branch [ $branchName ] in [ $RepoId ] has been deleted."
+    $WhatIfPreference = !$TurnOffWhatIf
+    if (!$hasCentralPROpened -and $PSCmdlet.ShouldProcess("[ $branchName ] in [ $RepoId ]", "Deleting branches on cleanup script")) {
+      #Remove-GitHubSourceReferences -RepoId $RepoId -Ref $branch -AuthToken $AuthToken
+      LogDebug "The branch [ $branchName ] in [ $RepoId ] has been deleted."
+    }
   }
   catch {
     LogError "Remove-GitHubSourceReferences failed with exception:`n$_"

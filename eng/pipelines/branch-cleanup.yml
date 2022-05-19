@@ -48,7 +48,7 @@ jobs:
             arguments: >
               -RepoId ${{ repo }} 
               -CentralRepoId "Azure/azure-sdk-tools"
-              -CentralPRRegex "^.*[^-]*-(?<PrNumber>\d+).*$"
+              -CentralPRRegex ^sync-eng/common.*[^-]*-(?<PrNumber>.*)$
               -AuthToken $(azuresdk-github-pat)
       - ${{ each repo in parameters.SDKPrivate }}:
         - task: PowerShell@2
