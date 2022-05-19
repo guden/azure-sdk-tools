@@ -201,10 +201,9 @@ stages:
                         arguments: >
                           -RepoOwner "Azure"
                           -RepoName ${{ repo }}
-                          -BranchPrefix "sync-${{ parameters.DirectoryToSync }}-$(System.PullRequest.SourceBranch)-$(System.PullRequest.PullRequestNumber)"
-                          -CentralPRRegex "sync-eng/common.*[^-]*-(?<PrNumber>.*)"
+                          -CentralPRRegex "sync-${{ parameters.DirectoryToSync }}-$(System.PullRequest.SourceBranch)-$(System.PullRequest.PullRequestNumber)"
+                          -SkipCentralPR
                           -AuthToken $(azuresdk-github-pat)
-                          -WhatIfPreference $false
 
   - ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
     - stage: CreateSync

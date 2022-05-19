@@ -10,20 +10,22 @@ param(
   $CentralRepoId,
   # We start from the sync PRs, use the branch name to get the PR number of central repo. E.g. sync-eng/common-(<branchName>)-(<PrNumber>). Have group name on PR number.
   $CentralPRRegex,
-  [Parameter(Mandatory = $true)]
-  $BranchPrefix,
   # Date format: e.g. Tuesday, April 12, 2022 1:36:02 PM. Allow to use other date format.
   [AllowNull()]
   [DateTime]$LastCommitOlderThan,
+  [switch]$skipCentralPR,
   [Parameter(Mandatory = $true)]
-  $AuthToken,
-  $WhatIfPreference = $true
+  $AuthToken
 )
 
 . (Join-Path $PSScriptRoot common.ps1)
 
-function RetrievePRAndClose($pullRequestNumber)
-{
+function RetrievePRAndClose {
+  [CmdletBinding(SupportsShouldProcess)]
+  param (
+    $pullRequestNumber
+  )
+
   if (!$pullRequestNumber) {
     return $false
   }
@@ -55,8 +57,10 @@ function RetrievePRAndClose($pullRequestNumber)
   foreach ($openPullRequest in $openPullRequests) {
     try 
     {
-      Close-GithubPullRequest -apiurl $openPullRequest.url -AuthToken $AuthToken | Out-Null
-      LogDebug "Open pull Request [ $($openPullRequest.url)] associate with branch [ $branchName ] in repo [ $RepoId ] has been closed."
+      if (!$hasCentralPROpened -and $PSCmdlet.ShouldProcess("[ $($openPullRequest.url)] with branch [ $branchName ] in [ $RepoId ]", "Closing the pull request")) {
+        Close-GithubPullRequest -apiurl $openPullRequest.url -AuthToken $AuthToken | Out-Null
+        LogDebug "Open pull Request [ $($openPullRequest.url)] associate with branch [ $branchName ] in repo [ $RepoId ] has been closed."
+      }
     }
     catch
     {
@@ -68,9 +72,10 @@ function RetrievePRAndClose($pullRequestNumber)
 }
 
 LogDebug "Operating on Repo [ $RepoId ]"
-Write-Host "The what if value is $WhatIfPreference"
+
 try{
-  $responses = Get-GitHubSourceReferences -RepoId $RepoId -Ref "heads/$BranchPrefix" -AuthToken $AuthToken
+  # pull all branches.
+  $responses = Get-GitHubSourceReferences -RepoId $RepoId -Ref "heads" -AuthToken $AuthToken
 }
 catch {
   LogError "Get-GitHubSourceReferences failed with exception:`n$_"
@@ -85,6 +90,13 @@ foreach ($res in $responses)
   }
   $branch = $res.ref
   $branchName = $branch.Replace("refs/heads/","")
+  if (!($branchName -match $CentralPRRegex)) {
+    continue
+  }
+  $hasCentralPROpened = $false
+  if (!$skipCentralPR) {
+    $hasCentralPROpened = RetrievePRAndClose -pullRequestNumber $Matches["PrNumber"] 
+  }
   if ($LastCommitOlderThan) {
     if (!$res.object -or !$res.object.url) {
       LogWarning "No commit url returned from response. Skipping... "
@@ -108,10 +120,6 @@ foreach ($res in $responses)
       exit 1
     }
   } 
-  $hasCentralPROpened = $false
-  if ($branchName -match $CentralPRRegex) {
-    $hasCentralPROpened = RetrievePRAndClose -pullRequestNumber $Matches["PrNumber"] 
-  }
   
   try {
     if (!$hasCentralPROpened -and $PSCmdlet.ShouldProcess("[ $branchName ] in [ $RepoId ]", "Deleting branches on cleanup script")) {
