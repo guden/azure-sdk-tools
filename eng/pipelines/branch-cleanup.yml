@@ -48,8 +48,11 @@ jobs:
             arguments: >
               -RepoId ${{ repo }} 
               -CentralRepoId "Azure/azure-sdk-tools"
-              -CentralPRRegex ^sync-eng/common.*[^-]*-(?<PrNumber>.*)$
+              -BranchPrefix "sync-eng/common"
+              -CentralPRRegex "^sync-eng/common.*[^-]*-(?<PrNumber>.*)$"
               -AuthToken $(azuresdk-github-pat)
+              - ${{if eq(variables['Build.Reason'], 'Scheduled')}}:
+                -TurnOffWhatIf
       - ${{ each repo in parameters.SDKPrivate }}:
         - task: PowerShell@2
           displayName: Clean Up swagger private SDK PR and branches 
@@ -62,8 +65,11 @@ jobs:
             arguments: >
               -RepoId ${{ repo }}
               -CentralRepoId "Azure/azure-rest-api-specs-pr"
+              -BranchPrefix "sdkAuto"
               -CentralPRRegex "^sdkAuto/(?<PrNumber>\d+)/.*$"
               -AuthToken $(azuresdk-github-pat)
+              - ${{if eq(variables['Build.Reason'], 'Scheduled')}}::
+                -TurnOffWhatIf
       - ${{ each repo in parameters.DailyBranchRepos }}:
         - task: PowerShell@2
           displayName: Clean Up Docs Daily Branches
@@ -74,6 +80,8 @@ jobs:
             filePath: $(System.DefaultWorkingDirectory)/eng/common/scripts/Delete-RemoteBranches.ps1
             arguments: >
               -RepoId ${{ repo }}
-              -CentralPRRegex "daily"
+              -BranchPrefix "daily"
               -LastCommitOlderThan ((Get-Date).AddDays(-7))
               -AuthToken $(azuresdk-github-pat)  
+              - ${{if eq(variables['Build.Reason'], 'Scheduled')}}::
+                -TurnOffWhatIf
