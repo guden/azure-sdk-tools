@@ -37,7 +37,7 @@ jobs:
       - template: ./templates/variables/globals.yml
     steps:
       - pwsh: |
-          if (($(Build.Reason) eq 'Scheduled') -or ($env:FORCERUNDELETEBRANCH -eq 'true')) {
+          if (("$(Build.Reason)" eq 'Scheduled') -or ($env:FORCERUNDELETEBRANCH -eq 'true')) {
             Write-Host "##vso[task.setvariable variable=ExecuteDeleteOperation]$false"
           }
           else {
