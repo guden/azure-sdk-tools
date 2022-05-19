@@ -124,7 +124,7 @@ foreach ($res in $responses)
   try {
     if (!$hasCentralPROpened -and $PSCmdlet.ShouldProcess("[ $branchName ] in [ $RepoId ]", "Deleting branches on cleanup script")) {
       #Remove-GitHubSourceReferences -RepoId $RepoId -Ref $branch -AuthToken $AuthToken
-      LogDebug "The branch [ $branchName ] in [ $RepoId ] has been deleted."
+      LogDebug "The branch [ $branchName ] with sha [$($res.object.sha)] in [ $RepoId ] has been deleted."
     }
   }
   catch {
