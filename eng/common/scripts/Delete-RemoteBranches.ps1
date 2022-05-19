@@ -28,6 +28,7 @@ function RetrievePRAndClose($pullRequestNumber)
     return $false
   }
   try {
+    Write-Host "The repo [ $CentralRepoId ] pull request number is [ $pullRequestNumber ] "
     $centralPR = Get-GitHubPullRequest -RepoId $CentralRepoId -PullRequestNumber $pullRequestNumber -AuthToken $AuthToken
     if ($centralPR.state -ne "closed") {
       return $true
@@ -67,7 +68,7 @@ function RetrievePRAndClose($pullRequestNumber)
 }
 
 LogDebug "Operating on Repo [ $RepoId ]"
-
+Write-Host "The what if value is $WhatIfPreference"
 try{
   $responses = Get-GitHubSourceReferences -RepoId $RepoId -Ref "heads/$BranchPrefix" -AuthToken $AuthToken
 }

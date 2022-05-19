@@ -38,9 +38,11 @@ jobs:
     steps:
       - pwsh: |
           if (("$(Build.Reason)" -eq 'Scheduled') -or ($env:FORCERUNDELETEBRANCH -eq 'true')) {
+            Write-Host "return false"
             Write-Host "##vso[task.setvariable variable=ExecuteDeleteOperation]$false"
           }
           else {
+            Write-Host "return true"
             Write-Host "##vso[task.setvariable variable=ExecuteDeleteOperation]$true"
           }
         displayName: Set What if preference
