@@ -37,9 +37,13 @@ jobs:
       - template: ./templates/variables/globals.yml
     steps:
       - pwsh: |
-          Write-Host "##vso[task.setvariable variable=ExecuteDeleteOperation]$false"
+          if ($(Build.Reason) eq 'Scheduled' and ${{env:FORCERUNDELETEBRANCH}}, 'true') {
+            Write-Host "##vso[task.setvariable variable=ExecuteDeleteOperation]$false"
+          }
+          else {
+            Write-Host "##vso[task.setvariable variable=ExecuteDeleteOperation]$true"
+          }
         displayName: Set What if preference
-        condition: or(eq(variables['Build.Reason'], 'Scheduled'), eq(variables['ForceRunDeleteBranch'], 'true'))
       - ${{ each repo in parameters.Repos }}:
         - task: PowerShell@2
           displayName: Clean Up Sync Common Branches
