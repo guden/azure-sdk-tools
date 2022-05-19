@@ -36,6 +36,10 @@ jobs:
     variables:
       - template: ./templates/variables/globals.yml
     steps:
+      - pwsh: |
+          Write-Host "##vso[task.setvariable variable=ExecuteDeleteOperation]$false"
+        displayName: Set What if preference
+        condition: or(eq(variables['Build.Reason'], 'Scheduled'), eq(variables['ForceRunDeleteBranch'], 'true'))
       - ${{ each repo in parameters.Repos }}:
         - task: PowerShell@2
           displayName: Clean Up Sync Common Branches
@@ -51,8 +55,7 @@ jobs:
               -BranchPrefix "sync-eng/common"
               -CentralPRRegex "^sync-eng/common.*[^-]*-(?<PrNumber>.*)$"
               -AuthToken $(azuresdk-github-pat)
-              - ${{if eq(variables['Build.Reason'], 'Scheduled')}}:
-                -TurnOffWhatIf
+              -WhatIfPreference $(ExecuteDeleteOperation)
       - ${{ each repo in parameters.SDKPrivate }}:
         - task: PowerShell@2
           displayName: Clean Up swagger private SDK PR and branches 
@@ -68,8 +71,7 @@ jobs:
               -BranchPrefix "sdkAuto"
               -CentralPRRegex "^sdkAuto/(?<PrNumber>\d+)/.*$"
               -AuthToken $(azuresdk-github-pat)
-              - ${{if eq(variables['Build.Reason'], 'Scheduled')}}::
-                -TurnOffWhatIf
+              -WhatIfPreference $(ExecuteDeleteOperation)
       - ${{ each repo in parameters.DailyBranchRepos }}:
         - task: PowerShell@2
           displayName: Clean Up Docs Daily Branches
@@ -82,6 +84,5 @@ jobs:
               -RepoId ${{ repo }}
               -BranchPrefix "daily"
               -LastCommitOlderThan ((Get-Date).AddDays(-7))
-              -AuthToken $(azuresdk-github-pat)  
-              - ${{if eq(variables['Build.Reason'], 'Scheduled')}}::
-                -TurnOffWhatIf
+              -AuthToken $(azuresdk-github-pat) 
+              -WhatIfPreference $(ExecuteDeleteOperation)

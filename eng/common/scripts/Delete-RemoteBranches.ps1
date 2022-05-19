@@ -17,7 +17,7 @@ param(
   [DateTime]$LastCommitOlderThan,
   [Parameter(Mandatory = $true)]
   $AuthToken,
-  [switch] $TurnOffWhatIf
+  $WhatIfPreference = $true
 )
 
 . (Join-Path $PSScriptRoot common.ps1)
@@ -113,7 +113,6 @@ foreach ($res in $responses)
   }
   
   try {
-    $WhatIfPreference = !$TurnOffWhatIf
     if (!$hasCentralPROpened -and $PSCmdlet.ShouldProcess("[ $branchName ] in [ $RepoId ]", "Deleting branches on cleanup script")) {
       #Remove-GitHubSourceReferences -RepoId $RepoId -Ref $branch -AuthToken $AuthToken
       LogDebug "The branch [ $branchName ] in [ $RepoId ] has been deleted."

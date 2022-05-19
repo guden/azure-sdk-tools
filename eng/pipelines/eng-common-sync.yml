@@ -204,7 +204,7 @@ stages:
                           -BranchPrefix "sync-${{ parameters.DirectoryToSync }}-$(System.PullRequest.SourceBranch)-$(System.PullRequest.PullRequestNumber)"
                           -CentralPRRegex "sync-eng/common.*[^-]*-(?<PrNumber>.*)"
                           -AuthToken $(azuresdk-github-pat)
-                          -TurnOffWhatIf
+                          -WhatIfPreference $false
 
   - ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
     - stage: CreateSync
